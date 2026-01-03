@@ -1,6 +1,5 @@
 #include <iostream>
 #include <conio.h>
-#include <windows.h>
 #include "server.h"
 
 using namespace std;
@@ -62,7 +61,7 @@ int main()
         /* ================== 登录界面 ================== */
         if (page == Page::LOGIN)
         {
-            cout << "====== 欢迎使用委托系统 ======\n\n";
+            cout << "====== 帮个忙 ======\n\n";
 
             const char *menu[] = {
                 "登录",
@@ -236,6 +235,8 @@ int main()
                     current_user = srv.login(phone, password);
                     if (current_user)
                     {
+                        cout << endl
+                             << "登录成功！按任意键继续...";
                         page = Page::ENTRUST_LIST;
                         cursor = 0;
                     }
