@@ -1,9 +1,5 @@
-#include <iostream>
 #include <iomanip>
 #include "entrustment.h"
-using namespace std;
-
-#define space_length 20
 
 #define Base_Gain 20
 #define Base_Loss 15
@@ -13,6 +9,7 @@ using namespace std;
 typedef string client_string;
 typedef double client_double;
 typedef int client_int;
+
 // 用户类
 class client
 {
@@ -34,6 +31,28 @@ public:
             m_id += '1';
         else
             m_id += '0';
+
+        ofstream ofs;
+        ofs.open("面向对象课设\\用户信息.txt", ios::app);
+        ofs << left
+            << setw(space_length) << "姓名: " << m_name << endl
+            << setw(space_length) << "序列号: " << m_id << endl
+            << setw(space_length) << "性别: " << m_gender << endl
+            << setw(space_length) << "手机号: " << m_phone << endl
+            << setw(space_length) << "账户密码: " << m_password << endl
+            << setw(space_length) << "邮箱地址: " << m_email << endl
+            << setw(space_length) << "星级: " << m_star << endl
+            << setw(space_length) << "信誉分: " << m_credit << endl
+            << setw(space_length) << "承接委托数量: " << m_number_entrustment << endl
+            << setw(space_length) << "完成委托数量: " << m_number_completed_entrustment << endl
+            << setw(space_length) << "未完成委托数量: " << m_number_uncompleted_entrustment << endl
+            << setw(space_length) << "用户权限: ";
+        if (m_authority)
+            ofs << "管理员" << endl;
+        else
+            ofs << "普通用户" << endl;
+        ofs << endl;
+        ofs.close();
     }
     // 拷贝构造
     client(const client &other) : m_name(other.m_name), m_id(other.m_id), m_gender(other.m_gender), m_phone(other.m_phone), m_password(other.m_password), m_email(other.m_email), m_star(other.m_star), m_credit(other.m_credit), m_number_entrustment(other.m_number_entrustment), m_number_completed_entrustment(other.m_number_completed_entrustment), m_number_uncompleted_entrustment(other.m_number_uncompleted_entrustment), m_accept_history(other.m_accept_history), m_dispatch_history(other.m_dispatch_history), m_authority(other.m_authority) { m_code++; }
@@ -78,17 +97,32 @@ public:
         return *this;
     }
 
-    client_string getName() { return m_name; }
-    client_string getID() { return m_id; }
-    client_string getPhone() { return m_phone; }
-    client_string getPassword() { return m_password; }
-    client_string getEmail() { return m_email; }
-    client_double getStar() { return m_star; }
-    client_double getCreait() { return m_credit; }
-    client_int getSN() { return m_number_completed_entrustment; }
-    client_int getFN() { return m_number_uncompleted_entrustment; }
-    client_int getS() { return m_number_entrustment; }
+    // ===== 基本信息 =====
+    client_string getName() const { return m_name; }
+    client_string getGender() const { return m_gender; }
+    client_string getID() const { return m_id; }
+    client_string getPhone() const { return m_phone; }
+    client_string getPassword() const { return m_password; }
+    client_string getEmail() const { return m_email; }
+    client_double getStar() const { return m_star; }
+    client_double getCreait() const { return m_credit; }
+    client_int getSN() const { return m_number_completed_entrustment; }
+    client_int getFN() const { return m_number_uncompleted_entrustment; }
+    client_int getS() const { return m_number_entrustment; }
+
+    void setName(const string &v) { m_name = v; }
+    void setGender(const string &v) { m_gender = v; }
+    void setPhone(const string &v) { m_phone = v; }
+    void setEmail(const string &v) { m_email = v; }
+
+    // ===== 委托历史 =====
+    const vector<entrustment> &getDispatchHistory() const { return m_dispatch_history; }
+    const vector<entrustment> &getAcceptHistory() const { return m_accept_history; }
+
+    // ===== 权限 & 规则 =====
+    bool isAdmin() { return m_authority; }
     static client_int getCode() { return m_code; }
+    void setCreait(client_double creait) { m_credit = creait; }
 
     // 显示用户的具体信息
     void showInformation()
@@ -111,6 +145,7 @@ public:
             cout << "管理员" << endl;
         else
             cout << "普通用户" << endl;
+        cout << setw(space_length) << "段位: " << getStarLevel() << endl;
     }
 
     void show_accpect_history()
@@ -205,7 +240,6 @@ public:
     // 委托未能如期完成
     void MissonFail(entrustment &tmp)
     {
-        // 需要一个再次出现在列表中的函数
         tmp.setState(false);
         updateStar(false);
     }
@@ -213,9 +247,33 @@ public:
     // 完成委托时增加星值
     void MissonSuccess(entrustment &tmp)
     {
-        // 需要彻底从列表中移除该委托的函数
         tmp.setState(false);
         updateStar(true);
+    }
+
+    // 获取星级名称
+    string getStarLevel() const
+    {
+        if (m_star < 1200)
+            return "小白";
+        if (m_star < 1400)
+            return "青铜";
+        if (m_star < 1600)
+            return "铂金";
+        if (m_star < 1800)
+            return "黄金";
+        if (m_star < 2000)
+            return "白金";
+        if (m_star < 2200)
+            return "黑金";
+        if (m_star < 2400)
+            return "红名";
+        return "传奇";
+    }
+    // 信誉判断
+    bool canAcceptEntrustment()
+    {
+        return m_credit >= 90;
     }
 
 private:
