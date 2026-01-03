@@ -13,23 +13,30 @@ using namespace std;
 typedef string client_string;
 typedef double client_double;
 typedef int client_int;
-typedef string entrustment_string;
-typedef double entrustment_double;
 // 用户类
 class client
 {
 public:
     client() = default;
-    client(client_string name, client_string id, client_string gender, client_string phone, client_string password, client_string email, bool authority = false) : m_name(name), m_id(id), m_gender(gender), m_phone(phone), m_password(password), m_email(email), m_authority(authority)
+    client(client_string name, client_string gender, client_string phone, client_string password, client_string email, bool authority = false) : m_name(name), m_gender(gender), m_phone(phone), m_password(password), m_email(email), m_authority(authority)
     {
+        m_code++;
         m_star = 1200;  // 初始星值为1200
         m_credit = 100; // 信誉分满分100分
         m_number_completed_entrustment = 0;
         m_number_uncompleted_entrustment = 0;
         m_number_entrustment = m_number_completed_entrustment + m_number_uncompleted_entrustment;
+
+        for (int digit = 0; digit < length - m_code; ++digit)
+            m_id += '0';
+        m_id += to_string(m_code);
+        if (authority)
+            m_id += '1';
+        else
+            m_id += '0';
     }
     // 拷贝构造
-    client(const client &other) : m_name(other.m_name), m_id(other.m_id), m_gender(other.m_gender), m_phone(other.m_phone), m_password(other.m_password), m_email(other.m_email), m_star(other.m_star), m_credit(other.m_credit), m_number_entrustment(other.m_number_entrustment), m_number_completed_entrustment(other.m_number_completed_entrustment), m_number_uncompleted_entrustment(other.m_number_uncompleted_entrustment), m_accept_history(other.m_accept_history), m_dispatch_history(other.m_dispatch_history), m_authority(other.m_authority) {}
+    client(const client &other) : m_name(other.m_name), m_id(other.m_id), m_gender(other.m_gender), m_phone(other.m_phone), m_password(other.m_password), m_email(other.m_email), m_star(other.m_star), m_credit(other.m_credit), m_number_entrustment(other.m_number_entrustment), m_number_completed_entrustment(other.m_number_completed_entrustment), m_number_uncompleted_entrustment(other.m_number_uncompleted_entrustment), m_accept_history(other.m_accept_history), m_dispatch_history(other.m_dispatch_history), m_authority(other.m_authority) { m_code++; }
     // 移动构造
     client(client &&other) noexcept : m_name(std::move(other.m_name)), m_id(std::move(other.m_id)), m_gender(std::move(other.m_gender)), m_phone(std::move(other.m_phone)), m_password(std::move(other.m_password)), m_email(std::move(other.m_email)), m_star(other.m_star), m_credit(other.m_credit), m_number_entrustment(other.m_number_entrustment), m_number_completed_entrustment(other.m_number_completed_entrustment), m_number_uncompleted_entrustment(other.m_number_uncompleted_entrustment), m_accept_history(std::move(other.m_accept_history)), m_dispatch_history(std::move(other.m_dispatch_history)), m_authority(other.m_authority)
     {
@@ -81,6 +88,7 @@ public:
     client_int getSN() { return m_number_completed_entrustment; }
     client_int getFN() { return m_number_uncompleted_entrustment; }
     client_int getS() { return m_number_entrustment; }
+    static client_int getCode() { return m_code; }
 
     // 显示用户的具体信息
     void showInformation()
@@ -179,9 +187,9 @@ public:
     }
 
     // 创建委托
-    entrustment Creat_entrustment(entrustment_string id, entrustment_string name, entrustment_string time, entrustment_string location, entrustment_string content, entrustment_double profit)
+    entrustment Creat_entrustment(entrustment_string name, entrustment_string time, entrustment_string location, entrustment_string content, entrustment_double profit)
     {
-        entrustment event(id, name, time, location, content, profit);
+        entrustment event(name, time, location, content, profit);
         m_dispatch_history.push_back(event);
         cout << "发布委托数量: " << m_dispatch_history.size() << endl;
         return event;
@@ -224,5 +232,7 @@ private:
     client_int m_number_entrustment;
     vector<entrustment> m_dispatch_history;
     vector<entrustment> m_accept_history;
-    bool m_authority; // 账户权限
+    static client_int m_code; // 用于生成序列号
+    bool m_authority;         // 账户权限
 };
+client_int client::m_code = 0;
