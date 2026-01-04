@@ -16,6 +16,13 @@ enum class Page
     ENTRUST_DETAIL // 委托详情
 };
 
+/* ================== 可切换页面表 ================== */
+vector<Page> tabPages = {
+    Page::ENTRUST_LIST,
+    Page::MY_DISPATCH,
+    Page::MY_ACCEPT,
+    Page::USER_INFO};
+
 void clear()
 {
     system("cls");
@@ -209,16 +216,23 @@ int main()
         if (ch == 's')
             cursor++;
 
-        if (ch == 'a')
+        auto it = find(tabPages.begin(), tabPages.end(), page);
+        if (it != tabPages.end())
         {
-            page = Page((int(page) + 6) % 7);
-            cursor = 0;
-        }
+            int idx = it - tabPages.begin();
 
-        if (ch == 'd')
-        {
-            page = Page((int(page) + 1) % 7);
-            cursor = 0;
+            if (ch == 'a')
+            {
+                idx = (idx - 1 + tabPages.size()) % tabPages.size();
+                page = tabPages[idx];
+                cursor = 0;
+            }
+            else if (ch == 'd')
+            {
+                idx = (idx + 1) % tabPages.size();
+                page = tabPages[idx];
+                cursor = 0;
+            }
         }
 
         if (ch == 13) // Enter
