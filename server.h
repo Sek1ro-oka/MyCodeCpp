@@ -193,17 +193,16 @@ public:
 
         // ===== 用户 =====
         ifstream ufs("面向对象课设\\users.txt");
-        while (ufs.peek() != EOF)
+        while (true)
         {
             try
             {
                 client u = client::deserialize(ufs);
-                if (!u.getID().empty())
-                    idMap_users[u.getID()] = u;
+                idMap_users[u.getID()] = u;
             }
             catch (...)
             {
-                break; // 文件读完 or 格式错误，安全退出
+                break; // 正常 EOF
             }
         }
         ufs.close();
