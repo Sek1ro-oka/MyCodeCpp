@@ -1,4 +1,3 @@
-#include <iostream>
 #include <conio.h>
 #include "server.h"
 
@@ -7,14 +6,14 @@ using namespace std;
 /* ================== 页面枚举 ================== */
 enum class Page
 {
-    LOGIN,
-    REGISTER,
-    ENTRUST_LIST,
-    MY_DISPATCH,
-    MY_ACCEPT,
-    USER_INFO,
-    USER_PUBLISH,
-    ENTRUST_DETAIL
+    LOGIN,         // 登录
+    REGISTER,      // 注册
+    ENTRUST_LIST,  // 委托列表
+    MY_DISPATCH,   // 我发布的委托
+    MY_ACCEPT,     // 我承接的委托
+    USER_INFO,     // 用户个人信息
+    USER_PUBLISH,  // 发布委托
+    ENTRUST_DETAIL // 委托详情
 };
 
 void clear()
@@ -42,16 +41,15 @@ void drawEntrustDetail(const entrustment *e)
 int main()
 {
     server srv;
+    // 存档
+    srv.loadFromFile();
 
-    // 预置一个测试用户
-    srv.register_client("张三", "男", "123", "123", "a@qq.com");
-
-    Page page = Page::LOGIN;
-    client *current_user = nullptr;
+    Page page = Page::LOGIN;        // 最开始的登录界面
+    client *current_user = nullptr; // 登录用户
     const entrustment *current = nullptr;
 
     int loginCursor = 0; // 0=登录 1=注册 2=退出
-    int cursor = 0;
+    int cursor = 0;      // 光标
     string phone, password;
 
     while (true)
@@ -62,7 +60,7 @@ int main()
         if (page == Page::LOGIN)
         {
             cout << "====== 帮个忙 ======\n\n";
-
+            // 菜单页面
             const char *menu[] = {
                 "登录",
                 "注册",
@@ -95,7 +93,7 @@ int main()
 
             srv.register_client(name, gender, phone, password, email);
             cout << "\n注册成功，按任意键返回登录...";
-            _getch();
+            cout << "\n当前注册用户数量: " << srv.getAllUsers().size();
             page = Page::LOGIN;
         }
 
@@ -103,7 +101,7 @@ int main()
         else if (page == Page::ENTRUST_LIST)
         {
             cout << "【委托列表】\n\n";
-            int idx = 0;
+            int idx = 0; // 光标
             for (auto &p : srv.getAllEntrustments())
             {
                 cout << (idx == cursor ? "> " : "  ")
@@ -122,6 +120,8 @@ int main()
             for (int i = 0; i < (int)list.size(); ++i)
                 cout << (i == cursor ? "> " : "  ")
                      << list[i].getName() << endl;
+
+            cout << "\nA/D 切页  W/S 移动  Enter 查看  ESC 退出\n";
         }
 
         /* ================== 我承接 ================== */
@@ -132,6 +132,8 @@ int main()
             for (int i = 0; i < (int)list.size(); ++i)
                 cout << (i == cursor ? "> " : "  ")
                      << list[i].getName() << endl;
+
+            cout << "\nA/D 切页  W/S 移动  Enter 查看  ESC 退出\n";
         }
 
         /* ================== 个人信息 ================== */
@@ -171,7 +173,7 @@ int main()
 
             cout << "\n发布成功，按任意键返回...";
             _getch();
-            page = Page::MY_DISPATCH;
+            page = Page::MY_DISPATCH; // 切换页面
         }
 
         /* ================== 委托详情 ================== */
@@ -282,6 +284,8 @@ int main()
             }
         }
     }
+
+    srv.saveToFile();
 
     return 0;
 }
