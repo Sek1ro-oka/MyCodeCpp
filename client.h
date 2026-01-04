@@ -315,9 +315,18 @@ public:
         client u;
         string line;
 
-        // 防止 EOF 空读
-        if (!getline(ifs, u.m_id))
-            return u;
+        // === 跳过空行 ===
+        while (getline(ifs, line))
+        {
+            if (!line.empty())
+            {
+                u.m_id = line;
+                break;
+            }
+        }
+
+        if (u.m_id.empty())
+            throw runtime_error("EOF");
 
         getline(ifs, u.m_name);
         getline(ifs, u.m_gender);
@@ -326,13 +335,9 @@ public:
         getline(ifs, u.m_email);
 
         getline(ifs, line);
-        if (line.empty() || !isdigit(line[0]))
-            throw runtime_error("Invalid user file format (star)");
         u.m_star = stod(line);
 
         getline(ifs, line);
-        if (line.empty() || !isdigit(line[0]))
-            throw runtime_error("Invalid user file format (credit)");
         u.m_credit = stod(line);
 
         // ===== 承接委托 =====
@@ -341,8 +346,7 @@ public:
         for (int i = 0; i < acceptCnt; ++i)
         {
             getline(ifs, line);
-            u.m_accept_history.push_back(
-                entrustment::deserialize(line));
+            u.m_accept_history.push_back(entrustment::deserialize(line));
         }
 
         // ===== 发布委托 =====
@@ -351,13 +355,10 @@ public:
         for (int i = 0; i < dispatchCnt; ++i)
         {
             getline(ifs, line);
-            u.m_dispatch_history.push_back(
-                entrustment::deserialize(line));
+            u.m_dispatch_history.push_back(entrustment::deserialize(line));
         }
 
-        // ===== 吃掉 END_USER =====
-        getline(ifs, line); // 必须是 END_USER
-
+        getline(ifs, line); // END_USER
         return u;
     }
 
