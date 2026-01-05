@@ -53,7 +53,7 @@ public:
     entrustment_double getProfit() const { return e_profit; }
     entrustment_string getWorkId() const { return worker_id; }
     entrustment_string getBossId() const { return boss_id; }
-    entrustment_string getComments() const { return e_comments; }
+    const vector<string> &getComments() const { return e_comments; }
 
     /* ===== setter ===== */
     void setId(const entrustment_string &v) { e_id = v; }
@@ -68,26 +68,71 @@ public:
     string serialize() const
     {
         ostringstream oss;
-        oss << e_id << " "
-            << e_name << " "
-            << e_time << " "
-            << e_location << " "
-            << e_content << " "
-            << e_star << " "
-            << e_profit << " "
-            << e_state << " "
-            << e_finished << " "
-            << boss_id << " "
-            << worker_id;
+
+        oss << e_id << "\n"
+            << e_name << "\n"
+            << e_time << "\n"
+            << e_location << "\n"
+            << e_content << "\n"
+            << e_star << "\n"
+            << e_profit << "\n"
+            << e_state << "\n"
+            << e_finished << "\n"
+            << boss_id << "\n"
+            << worker_id << "\n";
+
+        // ===== 评论 =====
+        oss << e_comments.size() << "\n";
+        for (auto &c : e_comments)
+            oss << c << "\n";
+
+        oss << "END_ENTRUST\n";
         return oss.str();
     }
 
-    static entrustment deserialize(const string &line)
+    static entrustment deserialize(ifstream &ifs)
     {
-        istringstream iss(line);
         entrustment e;
-        iss >> e.e_id >> e.e_name >> e.e_time >> e.e_location >> e.e_content >> e.e_star >> e.e_profit >> e.e_state >> e.e_finished >> e.boss_id >> e.worker_id;
+        string line;
+
+        getline(ifs, e.e_id);
+        if (e.e_id.empty())
+            throw runtime_error("EOF");
+
+        getline(ifs, e.e_name);
+        getline(ifs, e.e_time);
+        getline(ifs, e.e_location);
+        getline(ifs, e.e_content);
+
+        getline(ifs, line);
+        e.e_star = stod(line);
+        getline(ifs, line);
+        e.e_profit = stod(line);
+        getline(ifs, line);
+        e.e_state = stoi(line);
+        getline(ifs, line);
+        e.e_finished = stoi(line);
+
+        getline(ifs, e.boss_id);
+        getline(ifs, e.worker_id);
+
+        // ===== 评论 =====
+        getline(ifs, line);
+        int cnt = stoi(line);
+        for (int i = 0; i < cnt; ++i)
+        {
+            getline(ifs, line);
+            e.e_comments.push_back(line);
+        }
+
+        getline(ifs, line); // END_ENTRUST
         return e;
+    }
+
+    // 添加评论
+    void addComment(const string &c)
+    {
+        e_comments.push_back(c);
     }
 
 private:
@@ -99,7 +144,7 @@ private:
     entrustment_double e_star{};
     entrustment_double e_profit{};
 
-    entrustment_string e_comments;
+    vector<string> e_comments;
     client_string boss_id;
     client_string worker_id;
 
