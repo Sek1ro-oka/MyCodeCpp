@@ -107,7 +107,7 @@ public:
     string generate_event_id()
     {
         string id = "E";
-        // 修正：确保补0后总长度为6（E + 5位数字），避免负数长度
+        // 确保补0后总长度为6（E + 5位数字）
         int num_len = to_string(next_event_id).size();
         int pad_len = max(0, 5 - num_len); // 防止pad_len为负
         id += string(pad_len, '0');
