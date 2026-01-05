@@ -238,9 +238,16 @@ public:
         m_accept_history.push_back(temp);
     }
 
+    // 获取承接历史引用
     vector<entrustment> &accessAcceptHistory()
     {
         return m_accept_history;
+    }
+
+    // 获取发布历史引用
+    vector<entrustment> &accessDispatchHistory()
+    {
+        return m_dispatch_history;
     }
 
     // 委托未能如期完成
@@ -294,6 +301,10 @@ public:
             << m_email << "\n"
             << m_star << "\n"
             << m_credit << "\n";
+        if (m_authority)
+            oss << "1\n";
+        else
+            oss << "0\n";
 
         // ===== 承接委托 =====
         oss << m_accept_history.size() << "\n";
@@ -340,13 +351,17 @@ public:
         getline(ifs, line);
         u.m_credit = stod(line);
 
+        getline(ifs, line);
+        u.m_authority = (line == "1");
+
         // ===== 承接委托 =====
         getline(ifs, line);
         int acceptCnt = stoi(line);
+
         for (int i = 0; i < acceptCnt; ++i)
         {
-            getline(ifs, line);
-            u.m_accept_history.push_back(entrustment::deserialize(line));
+            entrustment e = entrustment::deserialize(ifs);
+            u.m_accept_history.push_back(e);
         }
 
         // ===== 发布委托 =====
@@ -354,8 +369,8 @@ public:
         int dispatchCnt = stoi(line);
         for (int i = 0; i < dispatchCnt; ++i)
         {
-            getline(ifs, line);
-            u.m_dispatch_history.push_back(entrustment::deserialize(line));
+            entrustment e = entrustment::deserialize(ifs);
+            u.m_dispatch_history.push_back(e);
         }
 
         getline(ifs, line); // END_USER
