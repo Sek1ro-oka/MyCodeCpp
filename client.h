@@ -33,9 +33,9 @@ public:
             m_id += '0';
     }
     // 拷贝构造
-    client(const client &other) : m_name(other.m_name), m_id(other.m_id), m_gender(other.m_gender), m_phone(other.m_phone), m_password(other.m_password), m_email(other.m_email), m_star(other.m_star), m_credit(other.m_credit), m_number_entrustment(other.m_number_entrustment), m_number_completed_entrustment(other.m_number_completed_entrustment), m_number_uncompleted_entrustment(other.m_number_uncompleted_entrustment), m_accept_history(other.m_accept_history), m_dispatch_history(other.m_dispatch_history), m_authority(other.m_authority) {}
+    client(const client &other) : m_name(other.m_name), m_id(other.m_id), m_gender(other.m_gender), m_phone(other.m_phone), m_password(other.m_password), m_email(other.m_email), m_star(other.m_star), m_credit(other.m_credit), m_number_entrustment(other.m_number_entrustment), m_number_completed_entrustment(other.m_number_completed_entrustment), m_number_uncompleted_entrustment(other.m_number_uncompleted_entrustment), m_accept_ids(other.m_accept_ids), m_dispatch_ids(other.m_dispatch_ids), m_authority(other.m_authority) {}
     // 移动构造
-    client(client &&other) noexcept : m_name(std::move(other.m_name)), m_id(std::move(other.m_id)), m_gender(std::move(other.m_gender)), m_phone(std::move(other.m_phone)), m_password(std::move(other.m_password)), m_email(std::move(other.m_email)), m_star(other.m_star), m_credit(other.m_credit), m_number_entrustment(other.m_number_entrustment), m_number_completed_entrustment(other.m_number_completed_entrustment), m_number_uncompleted_entrustment(other.m_number_uncompleted_entrustment), m_accept_history(std::move(other.m_accept_history)), m_dispatch_history(std::move(other.m_dispatch_history)), m_authority(other.m_authority)
+    client(client &&other) noexcept : m_name(std::move(other.m_name)), m_id(std::move(other.m_id)), m_gender(std::move(other.m_gender)), m_phone(std::move(other.m_phone)), m_password(std::move(other.m_password)), m_email(std::move(other.m_email)), m_star(other.m_star), m_credit(other.m_credit), m_number_entrustment(other.m_number_entrustment), m_number_completed_entrustment(other.m_number_completed_entrustment), m_number_uncompleted_entrustment(other.m_number_uncompleted_entrustment), m_accept_ids(std::move(other.m_accept_ids)), m_dispatch_ids(std::move(other.m_dispatch_ids)), m_authority(other.m_authority)
     {
         other.m_star = 0.0;
         other.m_credit = 0.0;
@@ -60,8 +60,8 @@ public:
             m_number_completed_entrustment = other.m_number_completed_entrustment;
             m_number_uncompleted_entrustment = other.m_number_uncompleted_entrustment;
             m_number_entrustment = other.m_number_entrustment;
-            m_dispatch_history = other.m_dispatch_history;
-            m_accept_history = other.m_accept_history;
+            m_dispatch_ids = other.m_dispatch_ids;
+            m_accept_ids = other.m_accept_ids;
             m_authority = other.m_authority;
         }
         return *this;
@@ -82,8 +82,8 @@ public:
             m_number_entrustment = other.m_number_entrustment;
             m_number_completed_entrustment = other.m_number_completed_entrustment;
             m_number_uncompleted_entrustment = other.m_number_uncompleted_entrustment;
-            m_accept_history = std::move(other.m_accept_history);
-            m_dispatch_history = std::move(other.m_dispatch_history);
+            m_accept_ids = std::move(other.m_accept_ids);
+            m_dispatch_ids = std::move(other.m_dispatch_ids);
             m_authority = other.m_authority;
 
             // 重置原对象
@@ -117,73 +117,33 @@ public:
     void setPassword(const string &v) { m_password = v; }
     void setID(const string &v) { m_id = v; }
 
+    // 添加 ID
+    void addAcceptId(const string &id) { m_accept_ids.push_back(id); };
+    void addDispatchId(const string &id) { m_dispatch_ids.push_back(id); };
+
+    // 删除 ID
+    void removeAcceptId(const string &id)
+    {
+        m_accept_ids.erase(remove(m_accept_ids.begin(), m_accept_ids.end(), id),
+                           m_accept_ids.end());
+    };
+    void removeDispatchId(const string &id)
+    {
+        m_dispatch_ids.erase(remove(m_dispatch_ids.begin(), m_dispatch_ids.end(), id),
+                             m_dispatch_ids.end());
+    };
+
     // ===== 委托历史 =====
-    const vector<entrustment> &getDispatchHistory() const { return m_dispatch_history; }
-    const vector<entrustment> &getAcceptHistory() const { return m_accept_history; }
+    const vector<entrustment_string> &getDispatchHistory() const { return m_dispatch_ids; }
+    const vector<entrustment_string> &getAcceptHistory() const { return m_accept_ids; }
+    // 获取承接历史引用
+    vector<entrustment_string> &accessAcceptHistory() { return m_accept_ids; }
+    // 获取发布历史引用
+    vector<entrustment_string> &accessDispatchHistory() { return m_dispatch_ids; }
 
     // ===== 权限 & 规则 =====
     bool isAdmin() { return m_authority; }
     void setCreait(client_double creait) { m_credit = creait; }
-
-    // 显示用户的具体信息
-    void showInformation()
-    {
-        cout << "=========================用户信息如下=========================\n";
-        cout << left
-             << setw(space_length) << "姓名: " << m_name << endl
-             << setw(space_length) << "序列号: " << m_id << endl
-             << setw(space_length) << "性别: " << m_gender << endl
-             << setw(space_length) << "手机号: " << m_phone << endl
-             << setw(space_length) << "账户密码: " << m_password << endl
-             << setw(space_length) << "邮箱地址: " << m_email << endl
-             << setw(space_length) << "星级: " << m_star << endl
-             << setw(space_length) << "信誉分: " << m_credit << endl
-             << setw(space_length) << "承接委托数量: " << m_number_entrustment << endl
-             << setw(space_length) << "完成委托数量: " << m_number_completed_entrustment << endl
-             << setw(space_length) << "未完成委托数量: " << m_number_uncompleted_entrustment << endl
-             << setw(space_length) << "用户权限: ";
-        if (m_authority)
-            cout << "管理员" << endl;
-        else
-            cout << "普通用户" << endl;
-        cout << setw(space_length) << "段位: " << getStarLevel() << endl;
-    }
-
-    void show_accpect_history()
-    {
-        if (m_accept_history.size() <= 0)
-            return;
-        cout << "=========================历史承接委托信息如下=========================\n";
-        cout << left;
-        for (auto event : m_accept_history)
-            cout << setw(space_length) << "序列号: " << event.getId() << endl
-                 << setw(space_length) << "标题: " << event.getName() << endl
-                 << setw(space_length) << "时间: " << event.getTime() << endl
-                 << setw(space_length) << "地点: " << event.getLocation() << endl
-                 << setw(space_length) << "内容: " << event.getContent() << endl
-                 << setw(space_length) << "星级: " << event.getStar() << endl
-                 << setw(space_length) << "报酬: " << event.getProfit() << endl
-                 << endl;
-        cout << "历史承接委托数量: " << m_accept_history.size() << endl;
-    }
-
-    void show_dispatch_history()
-    {
-        if (m_dispatch_history.size() <= 0)
-            return;
-        cout << "=========================历史发布委托信息如下=========================\n";
-        cout << left;
-        for (auto event : m_dispatch_history)
-            cout << setw(space_length) << "序列号: " << event.getId() << endl
-                 << setw(space_length) << "标题: " << event.getName() << endl
-                 << setw(space_length) << "时间: " << event.getTime() << endl
-                 << setw(space_length) << "地点: " << event.getLocation() << endl
-                 << setw(space_length) << "内容: " << event.getContent() << endl
-                 << setw(space_length) << "星级: " << event.getStar() << endl
-                 << setw(space_length) << "报酬: " << event.getProfit() << endl
-                 << endl;
-        cout << "发布委托数量: " << m_dispatch_history.size() << endl;
-    }
 
     // 计算星级
     void updateStar(bool flag) // 委托成功flag = true 否则, flag = false
@@ -222,48 +182,6 @@ public:
         }
     }
 
-    // 创建委托
-    entrustment Creat_entrustment(entrustment_string name, entrustment_string time, entrustment_string location, entrustment_string content, entrustment_double profit)
-    {
-        entrustment event(name, time, location, content, profit, this->getID());
-        m_dispatch_history.push_back(event);
-        cout << "发布委托数量: " << m_dispatch_history.size() << endl;
-        return event;
-    }
-
-    // 接受委托
-    void Accept(entrustment &temp)
-    {
-        temp.setState(true);
-        m_accept_history.push_back(temp);
-    }
-
-    // 获取承接历史引用
-    vector<entrustment> &accessAcceptHistory()
-    {
-        return m_accept_history;
-    }
-
-    // 获取发布历史引用
-    vector<entrustment> &accessDispatchHistory()
-    {
-        return m_dispatch_history;
-    }
-
-    // 委托未能如期完成
-    void MissonFail(entrustment &tmp)
-    {
-        tmp.setState(false);
-        updateStar(false);
-    }
-
-    // 完成委托时增加星值
-    void MissonSuccess(entrustment &tmp)
-    {
-        tmp.setState(false);
-        updateStar(true);
-    }
-
     // 获取星级名称
     string getStarLevel() const
     {
@@ -300,21 +218,24 @@ public:
             << m_password << "\n"
             << m_email << "\n"
             << m_star << "\n"
-            << m_credit << "\n";
+            << m_credit << "\n"
+            << m_number_completed_entrustment << "\n"
+            << m_number_uncompleted_entrustment << "\n"
+            << m_number_entrustment << "\n";
         if (m_authority)
             oss << "1\n";
         else
             oss << "0\n";
 
         // ===== 承接委托 =====
-        oss << m_accept_history.size() << "\n";
-        for (auto &e : m_accept_history)
-            oss << e.serialize() << "\n";
+        oss << m_accept_ids.size() << "\n";
+        for (auto &id : m_accept_ids)
+            oss << id << "\n";
 
         // ===== 发布委托 =====
-        oss << m_dispatch_history.size() << "\n";
-        for (auto &e : m_dispatch_history)
-            oss << e.serialize() << "\n";
+        oss << m_dispatch_ids.size() << "\n";
+        for (auto &id : m_dispatch_ids)
+            oss << id << "\n";
 
         oss << "END_USER\n";
         return oss.str();
@@ -352,16 +273,22 @@ public:
         u.m_credit = stod(line);
 
         getline(ifs, line);
+        u.m_number_completed_entrustment = stoi(line);
+        getline(ifs, line);
+        u.m_number_uncompleted_entrustment = stoi(line);
+        getline(ifs, line);
+        u.m_number_entrustment = stoi(line);
+
+        getline(ifs, line);
         u.m_authority = (line == "1");
 
         // ===== 承接委托 =====
         getline(ifs, line);
         int acceptCnt = stoi(line);
-
         for (int i = 0; i < acceptCnt; ++i)
         {
-            entrustment e = entrustment::deserialize(ifs);
-            u.m_accept_history.push_back(e);
+            getline(ifs, line);
+            u.m_accept_ids.push_back(line);
         }
 
         // ===== 发布委托 =====
@@ -369,8 +296,8 @@ public:
         int dispatchCnt = stoi(line);
         for (int i = 0; i < dispatchCnt; ++i)
         {
-            entrustment e = entrustment::deserialize(ifs);
-            u.m_dispatch_history.push_back(e);
+            getline(ifs, line);
+            u.m_dispatch_ids.push_back(line);
         }
 
         getline(ifs, line); // END_USER
@@ -389,7 +316,7 @@ private:
     client_int m_number_completed_entrustment;
     client_int m_number_uncompleted_entrustment;
     client_int m_number_entrustment;
-    vector<entrustment> m_dispatch_history;
-    vector<entrustment> m_accept_history;
+    vector<entrustment_string> m_dispatch_ids;
+    vector<entrustment_string> m_accept_ids;
     bool m_authority; // 账户权限
 };
