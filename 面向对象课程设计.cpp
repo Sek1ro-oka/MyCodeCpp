@@ -580,7 +580,7 @@ int main()
                 {
                     cout << "\n接受成功, 按任意键继续...";
                     _getch();
-                    page = Page::ENTRUST_LIST; // 切回委托列表（而非MY_ACCEPT）
+                    page = Page::ENTRUST_LIST; // 切回委托列表
                     cursor = 0;                // 重置光标
                 }
                 else
@@ -610,9 +610,11 @@ int main()
                 page = Page::USER_PUBLISH;
             }
 
-            else if (page == Page::USER_INFO)
+            else if (page == Page::MY_DISPATCH)
             {
-                page = Page::USER_PUBLISH;
+                string eid = current_user->getDispatchHistory()[cursor];
+                current = srv.find_entrustment(eid);
+                page = Page::ENTRUST_DETAIL;
             }
 
             else if (page == Page::MY_ACCEPT)
@@ -632,4 +634,3 @@ int main()
     srv.saveToFile();
     return 0;
 }
-
