@@ -56,14 +56,11 @@ int main()
     srv.loadFromFile();
 
     //  预设管理员（只在第一次）
-    if (srv.getAllUsers().empty())
+    if (!srv.hasAdmin())
     {
         srv.creat_administrator_account(
-            "管理员",
-            "男",
-            "admin",
-            "admin",
-            "admin@qq.com");
+            "管理员", "男", "admin", "admin", "admin@qq.com");
+        srv.saveToFile(); // ? 立刻落盘
     }
 
     Page page = Page::LOGIN;        // 最开始的登录界面
@@ -89,7 +86,7 @@ int main()
                 "注册",
                 "退出"};
 
-            for (int i = 0; i < 3; ++i)
+            for (int i = 0; i < 4; ++i)
             {
                 cout << (i == loginCursor ? "> " : "  ")
                      << menu[i] << endl;
@@ -114,9 +111,15 @@ int main()
             cout << "邮箱：";
             cin >> email;
 
-            srv.register_client(name, gender, phone, password, email);
-            cout << "\n注册成功，按任意键返回登录...";
-            cout << "\n当前注册用户数量: " << srv.getAllUsers().size();
+            if (!srv.register_client(name, gender, phone, password, email))
+                cout << "\n手机号已被注册，按任意键返回...";
+
+            else
+            {
+                cout << "\n注册成功，按任意键返回登录...";
+                cout << "\n当前注册用户数量: " << srv.getAllUsers().size();
+            }
+            _getch();
             page = Page::LOGIN;
         }
 
@@ -124,12 +127,29 @@ int main()
         else if (page == Page::ENTRUST_LIST)
         {
             cout << "【委托列表】\n\n";
-            int idx = 0; // 光标
+            // 收集所有未被承接的委托（核心过滤）
+            vector<const entrustment *> availableEntrusts;
             for (auto &p : srv.getAllEntrustments())
             {
-                cout << (idx == cursor ? "> " : "  ")
-                     << p.second.getName() << endl;
-                idx++;
+                if (!p.second.getState()) // 只保留未被承接的委托
+                {
+                    availableEntrusts.push_back(&p.second);
+                }
+            }
+
+            // 渲染过滤后的委托列表
+            int idx = 0;
+            if (availableEntrusts.empty())
+            {
+                cout << "  暂无未被承接的委托\n";
+            }
+            else
+            {
+                for (auto *e : availableEntrusts)
+                {
+                    cout << (idx == cursor ? "> " : "  ") << e->getName() << endl;
+                    idx++;
+                }
             }
 
             cout << "\nA/D 切页  W/S 移动  Enter 查看  ESC 退出\n";
@@ -139,10 +159,13 @@ int main()
         else if (page == Page::MY_DISPATCH)
         {
             cout << "【我发布的委托】\n\n";
-            const auto &list = current_user->getDispatchHistory();
-            for (int i = 0; i < (int)list.size(); ++i)
-                cout << (i == cursor ? "> " : "  ")
-                     << list[i].getName() << endl;
+            const auto &ids = current_user->getDispatchHistory();
+            for (int i = 0; i < ids.size(); ++i)
+            {
+                entrustment *e = srv.find_entrustment(ids[i]);
+                if (e)
+                    cout << (i == cursor ? "> " : "  ") << e->getName() << endl;
+            }
 
             cout << "\nA/D 切页  W/S 移动  [R] 删除委托  Enter 查看  ESC 返回\n";
         }
@@ -151,10 +174,13 @@ int main()
         else if (page == Page::MY_ACCEPT)
         {
             cout << "【我承接的委托】\n\n";
-            const auto &list = current_user->getAcceptHistory();
-            for (int i = 0; i < (int)list.size(); ++i)
-                cout << (i == cursor ? "> " : "  ")
-                     << list[i].getName() << endl;
+            const auto &ids = current_user->getAcceptHistory();
+            for (int i = 0; i < ids.size(); ++i)
+            {
+                entrustment *e = srv.find_entrustment(ids[i]);
+                if (e)
+                    cout << (i == cursor ? "> " : "  ") << e->getName() << endl;
+            }
 
             cout << "\nA/D 切页  W/S 移动  Enter 查看  ESC 退出\n";
         }
@@ -163,6 +189,7 @@ int main()
         else if (page == Page::USER_INFO)
         {
             cout << "【个人信息】\n\n";
+            cout << "uid: " << current_user->getID() << endl;
             cout << "姓名：" << current_user->getName() << endl;
             cout << "性别：" << current_user->getGender() << endl;
             cout << "手机：" << current_user->getPhone() << endl;
@@ -171,7 +198,7 @@ int main()
                  << "（" << current_user->getStarLevel() << "）\n";
             cout << "信誉分：" << current_user->getCreait() << endl;
 
-            cout << "\n[1] 修改个人信息  [Enter] 发布委托  [ESC] 返回\n";
+            cout << "\n[1] 修改个人信息  [2] 注销账户  [Enter] 发布委托  [ESC] 返回\n";
         }
 
         /* ================== 编辑个人信息 ================== */
@@ -225,6 +252,9 @@ int main()
                     page = Page::USER_INFO;
                     continue;
                 }
+                cout << "\n新密码: ";
+                cin >> v;
+                current_user->setPassword(v);
             }
             else if (ch == 27)
             {
@@ -311,9 +341,9 @@ int main()
         if (page == Page::ENTRUST_DETAIL && (ch == 'c' || ch == 'C'))
         {
             string comment;
-
             cout << "\n输入评论: ";
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // 保留
             getline(cin, comment);
 
             if (!comment.empty())
@@ -322,6 +352,7 @@ int main()
                 if (e)
                 {
                     e->addComment(current_user->getName() + ": " + comment);
+                    srv.saveToFile(); // 立刻保存
                 }
             }
         }
@@ -344,12 +375,12 @@ int main()
 
         if (page == Page::MY_DISPATCH && (ch == 'r' || ch == 'R'))
         {
-            auto &list = current_user->accessDispatchHistory();
-            if (cursor < list.size())
+            const auto &ids = current_user->getDispatchHistory();
+            if (cursor < ids.size())
             {
                 bool ok = srv.cancel_dispatch(
                     current_user->getID(),
-                    list[cursor].getId());
+                    ids[cursor]);
 
                 if (!ok)
                 {
@@ -366,12 +397,47 @@ int main()
             if (ch == 'w')
                 loginCursor = max(0, loginCursor - 1);
             if (ch == 's')
-                loginCursor = min(2, loginCursor + 1);
+                loginCursor = min(3, loginCursor + 1);
         }
 
-        if (ch == '1' && page == Page::USER_INFO)
+        if (page == Page::USER_INFO)
         {
-            page = Page::USER_EDIT;
+            if (ch == '1')
+                page = Page::USER_EDIT;
+
+            else if (ch == '2') // 注销账户
+            {
+                clear();
+                cout << "====== 注销账户 ======\n\n请输入密码确认注销：";
+                string pwd;
+                cin >> pwd;
+                if (pwd == current_user->getPassword())
+                {
+                    cout << "\n确认注销？(Y/N)：";
+                    char confirm = _getch();
+                    if (confirm == 'Y' || confirm == 'y')
+                    {
+                        srv.delete_account(current_user->getID());
+                        cout << "\n账户已注销，按任意键返回登录...";
+                        _getch();
+                        // 重置状态
+                        current_user = nullptr;
+                        page = Page::LOGIN;
+                        loginCursor = 0;
+                        cursor = 0;
+                    }
+                    else
+                    {
+                        cout << "\n注销取消，按任意键返回...";
+                        _getch();
+                    }
+                }
+                else
+                {
+                    cout << "\n密码错误，注销失败...";
+                    _getch();
+                }
+            }
         }
 
         if (ch == 27) // ESC
@@ -381,7 +447,10 @@ int main()
             else if (page == Page::USER_PUBLISH)
                 page = Page::USER_INFO;
             else
+            {
+                srv.saveToFile();
                 break;
+            }
         }
 
         if (ch == 'w')
@@ -389,6 +458,19 @@ int main()
 
         if (ch == 's')
             cursor++;
+
+        if (page == Page::ENTRUST_LIST)
+        {
+            // 重新计算未被承接的委托数量
+            int availCount = 0;
+            for (auto &p : srv.getAllEntrustments())
+            {
+                if (!p.second.getState())
+                    availCount++;
+            }
+            // 光标不能超过列表长度-1，也不能小于0
+            cursor = max(0, min(cursor, availCount - 1));
+        }
 
         auto it = find(tabPages.begin(), tabPages.end(), page);
         if (it != tabPages.end())
@@ -465,35 +547,62 @@ int main()
                 }
                 else // 退出
                 {
+                    srv.saveToFile();
                     return 0;
                 }
             }
 
             else if (page == Page::ENTRUST_LIST)
             {
-                int idx = 0;
+                // 先收集未被承接的委托
+                vector<const entrustment *> availableEntrusts;
                 for (auto &p : srv.getAllEntrustments())
                 {
-                    if (idx == cursor)
+                    if (!p.second.getState())
                     {
-                        current = &p.second;
-                        page = Page::ENTRUST_DETAIL;
-                        break;
+                        availableEntrusts.push_back(&p.second);
                     }
-                    idx++;
+                }
+
+                // 只有列表非空时才跳转详情
+                if (cursor >= 0 && cursor < availableEntrusts.size())
+                {
+                    current = availableEntrusts[cursor];
+                    page = Page::ENTRUST_DETAIL;
+                    srv.saveToFile();
                 }
             }
+
             else if (page == Page::ENTRUST_DETAIL && current)
             {
-                if (srv.accept_clint(current_user->getID(), current->getId()) == 1)
+                int res = srv.accept_clint(current_user->getID(), current->getId());
+                if (res == 1)
+                {
                     cout << "\n接受成功, 按任意键继续...";
-                else if (srv.accept_clint(current_user->getID(), current->getId()) == 0)
-                    cout << "\n错误! 委托不存在, 按任意键继续...";
-                else if (srv.accept_clint(current_user->getID(), current->getId()) == -1)
-                    cout << "\n您的信誉分过低, 暂时无法接受新委托, 按任意键继续...";
-                _getch();
-                page = Page::MY_ACCEPT;
-                cursor = 0;
+                    _getch();
+                    page = Page::ENTRUST_LIST; // 切回委托列表（而非MY_ACCEPT）
+                    cursor = 0;                // 重置光标
+                }
+                else
+                {
+                    if (res == 0)
+                        cout
+                            << "\n错误! 委托不存在, 按任意键继续...";
+                    else if (res == -1)
+                        cout
+                            << "\n信誉分过低(＜90), 无法承接...";
+                    else if (res == -2)
+                        cout
+                            << "\n委托已被承接, 无法重复承接...";
+                    else if (res == -3) // 新增星级不足提示
+                    {
+                        cout << "\n星级不足(" << current_user->getStar()
+                             << ")，需≥" << current->getStar() << "才能承接...";
+                    }
+                    _getch();
+                    page = Page::MY_ACCEPT;
+                    cursor = 0;
+                }
             }
 
             else if (page == Page::USER_INFO)
@@ -508,17 +617,19 @@ int main()
 
             else if (page == Page::MY_ACCEPT)
             {
-                const auto &list = current_user->getAcceptHistory();
-                if (cursor < list.size())
-                {
-                    current = &list[cursor];
-                    page = Page::ACCEPT_DETAIL;
-                }
+                string eid = current_user->getAcceptHistory()[cursor];
+                current = srv.find_entrustment(eid);
+                page = Page::ACCEPT_DETAIL;
             }
         }
     }
+    if (srv.isDirty())
+    {
+        srv.saveToFile();
+        srv.clearDirty();
+    }
 
     srv.saveToFile();
-
     return 0;
 }
+
