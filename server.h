@@ -38,6 +38,7 @@ public:
             user_id += '0';
         user_id += to_string(idMap_users.size() + 1);
         new_user.setID(user_id);
+
         idMap_users[user_id] = std::move(new_user);
         return true;
     }
@@ -46,6 +47,7 @@ public:
     bool creat_administrator_account(client_string name, client_string gender, client_string phone, client_string password, client_string email)
     {
         client administrator(name, gender, phone, password, email, true);
+
         client_string admin_id = administrator.getID();
         client_int admin_length = to_string(idMap_users.size() + 1).size();
         for (int i = 0; i < length - admin_length; ++i)
@@ -104,12 +106,15 @@ public:
     }
 
     // 用户接受委托
-    void accept_clint(const client_string &c_id, const entrustment_string &e_id)
+    int accept_clint(const client_string &c_id, const entrustment_string &e_id)
     {
         client *c = find_client(c_id);
         entrustment *e = find_entrustment(e_id);
         if (!c || !e)
-            return;
+            return 0;
+
+        if (c->canAcceptEntrustment() == false)
+            return -1;
 
         e->setState(true);
         e->setWorker(c_id);
@@ -119,6 +124,8 @@ public:
 
         // 再从公共委托列表删除
         idMap_events.erase(e_id);
+
+        return 1;
     }
 
     // 委托如期完成
@@ -142,10 +149,23 @@ public:
     }
 
     // 委托失败
-    void finish_fail_event(client_string c_id, entrustment_string e_id)
+    void finish_fail_event(const client_string &c_id, const entrustment_string &e_id)
     {
-        find_client(c_id)->MissonFail(*find_entrustment(e_id));
-        find_client(c_id)->setCreait(max(0.0, find_client(c_id)->getCreait() - 5)); // 信誉分降低
+        client *c = find_client(c_id);
+        if (!c)
+            return;
+
+        auto &list = c->accessAcceptHistory();
+        for (auto it = list.begin(); it != list.end(); ++it)
+        {
+            if (it->getId() == e_id)
+            {
+                c->MissonFail(*it);
+                c->setCreait(max(0.0, c->getCreait() - 5));
+                list.erase(it);
+                break;
+            }
+        }
     }
 
     // 通过手机号 + 密码登录
@@ -161,6 +181,41 @@ public:
         }
         return nullptr; // 登录失败
     }
+
+    // 发布者取消委托
+    bool cancel_dispatch(const client_string &uid, const entrustment_string &eid)
+    {
+        client *c = find_client(uid);
+        if (!c)
+            return false;
+
+        // 必须是“我发布的委托”
+        auto &dispatch = c->accessDispatchHistory();
+        auto it = find_if(dispatch.begin(), dispatch.end(),
+                          [&](const entrustment &e)
+                          {
+                              return e.getId() == eid;
+                          });
+
+        if (it == dispatch.end())
+        {
+            // 不是我发布的
+            return false;
+        }
+
+        // 如果还在公共委托池，说明没人承接 → 同时删除
+        auto pub = idMap_events.find(eid);
+        if (pub != idMap_events.end())
+        {
+            idMap_events.erase(pub);
+        }
+
+        // 无论是否被承接，都允许从“我发布的”中删除
+        dispatch.erase(it);
+
+        return true;
+    }
+
     // 获取所有委托（只读）
     const unordered_map<entrustment_string, entrustment> &getAllEntrustments() const
     {
@@ -209,13 +264,17 @@ public:
 
         // ===== 未被承接的委托 =====
         ifstream efs("面向对象课设\\entrustments.txt");
-        string line;
-        while (getline(efs, line))
+        while (true)
         {
-            if (line.empty())
-                continue;
-            entrustment e = entrustment::deserialize(line);
-            idMap_events[e.getId()] = e;
+            try
+            {
+                entrustment e = entrustment::deserialize(efs);
+                idMap_events[e.getId()] = e;
+            }
+            catch (...)
+            {
+                break;
+            }
         }
         efs.close();
     }
