@@ -33,7 +33,7 @@ public:
 
         client new_user(name, gender, phone, password, email);
 
-        // ? 全局唯一 ID
+        // 全局唯一 ID
         client_string id = "0";
         id += string(length - to_string(next_user_id).size(), '0');
         id += to_string(next_user_id++);
@@ -175,6 +175,7 @@ public:
         auto &ids = c->accessAcceptHistory();
         ids.erase(remove(ids.begin(), ids.end(), e_id), ids.end());
         c->updateStar(true);
+        c->setCreait(min(100.0, c->getCreait() + 2));
 
         entrustment *e = find_entrustment(e_id);
         if (e)
@@ -195,6 +196,7 @@ public:
         auto &ids = c->accessAcceptHistory();
         ids.erase(remove(ids.begin(), ids.end(), e_id), ids.end());
         c->updateStar(false);
+        c->setCreait(max(0.0, c->getCreait() - 1));
 
         entrustment *e = find_entrustment(e_id);
         if (e)
@@ -340,20 +342,20 @@ private:
     {
         // 报酬-星级映射规则
         if (profit <= 100)
-            return 1200.0; // 小白
+            return 0.0; // 小白
         if (profit <= 200)
-            return 1400.0; // 青铜
+            return 1200.0; // 青铜
         if (profit <= 300)
-            return 1600.0; // 铂金
+            return 1400.0; // 铂金
         if (profit <= 500)
-            return 1800.0; // 黄金
+            return 1600.0; // 黄金
         if (profit <= 800)
-            return 2000.0; // 白金
+            return 1800.0; // 白金
         if (profit <= 1000)
-            return 2200.0; // 黑金
+            return 2000.0; // 黑金
         if (profit <= 1500)
-            return 2400.0; // 红名
-        return 2600.0;     // 传奇
+            return 2200.0; // 红名
+        return 2400.0;     // 传奇
     }
 };
 
