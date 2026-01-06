@@ -127,7 +127,7 @@ int main()
         else if (page == Page::ENTRUST_LIST)
         {
             cout << "【委托列表】\n\n";
-            // 收集所有未被承接的委托（核心过滤）
+            // 收集所有未被承接的委托
             vector<const entrustment *> availableEntrusts;
             for (auto &p : srv.getAllEntrustments())
             {
@@ -160,6 +160,10 @@ int main()
         {
             cout << "【我发布的委托】\n\n";
             const auto &ids = current_user->getDispatchHistory();
+            if (ids.empty())
+            {
+                cout << "  暂无发布的委托\n";
+            }
             for (int i = 0; i < ids.size(); ++i)
             {
                 entrustment *e = srv.find_entrustment(ids[i]);
@@ -175,6 +179,10 @@ int main()
         {
             cout << "【我承接的委托】\n\n";
             const auto &ids = current_user->getAcceptHistory();
+            if (ids.empty())
+            {
+                cout << "  暂无承接的委托\n";
+            }
             for (int i = 0; i < ids.size(); ++i)
             {
                 entrustment *e = srv.find_entrustment(ids[i]);
@@ -446,6 +454,9 @@ int main()
                 page = Page::ENTRUST_LIST;
             else if (page == Page::USER_PUBLISH)
                 page = Page::USER_INFO;
+            else if (page == Page::ACCEPT_DETAIL)
+                page = Page::MY_ACCEPT;
+
             else
             {
                 srv.saveToFile();
@@ -515,8 +526,8 @@ int main()
                     else
                     {
                         cout << "\n登录失败，按任意键返回...";
-                        _getch();
                     }
+                    _getch();
                 }
                 else if (loginCursor == 1) // 管理员登录
                 {
@@ -531,15 +542,14 @@ int main()
                     if (current_user && current_user->isAdmin())
                     {
                         cout << "\n管理员登录成功!";
-                        _getch();
                         page = Page::ENTRUST_LIST;
                         cursor = 0;
                     }
                     else
                     {
                         cout << "\n管理员账号或密码错误!";
-                        _getch();
                     }
+                    _getch();
                 }
                 else if (loginCursor == 2) // 注册
                 {
