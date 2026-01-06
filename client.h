@@ -185,19 +185,19 @@ public:
     // 获取星级名称
     string getStarLevel() const
     {
-        if (m_star < 1200)
+        if (m_star <= 1200)
             return "小白";
-        if (m_star < 1400)
+        if (m_star <= 1400)
             return "青铜";
-        if (m_star < 1600)
+        if (m_star <= 1600)
             return "铂金";
-        if (m_star < 1800)
+        if (m_star <= 1800)
             return "黄金";
-        if (m_star < 2000)
+        if (m_star <= 2000)
             return "白金";
-        if (m_star < 2200)
+        if (m_star <= 2200)
             return "黑金";
-        if (m_star < 2400)
+        if (m_star <= 2400)
             return "红名";
         return "传奇";
     }
